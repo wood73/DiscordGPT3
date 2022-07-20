@@ -7,8 +7,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import wood.discord_threads.PromptThread;
-import wood.util.Util;
-import wood.util.UtilGPT;
+import wood.util.GPTUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -78,8 +77,8 @@ public class Chat extends Commands {
                 .findFirst().get().getAsString().toLowerCase();
 
         // Verify that the model is valid
-        if(!UtilGPT.isValidModel(model)) {
-            event.reply("'" + model + "' is an Invalid model.\nValid models are: " + Util.listModels())
+        if(!GPTUtil.isValidModel(model)) {
+            event.reply("'" + model + "' is an Invalid model.\nValid models are: " + GPTUtil.listModels())
                     .setEphemeral(true).queue();
             return;
         }

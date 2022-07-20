@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import wood.Settings;
-import wood.util.UtilGPT;
+import wood.util.GPTRequest;
 
 // TODO make buttons for user to select model
 public class Model extends Commands {
@@ -27,29 +27,29 @@ public class Model extends Commands {
         boolean validModel = true;
         switch(modelArg.toLowerCase()) {
             case "davinci":
-                Settings.model = UtilGPT.davinci;
+                Settings.model = GPTRequest.davinci;
                 break;
             case "curie":
-                Settings.model = UtilGPT.curie;
+                Settings.model = GPTRequest.curie;
                 break;
             case "babbage":
-                Settings.model = UtilGPT.babbage;
+                Settings.model = GPTRequest.babbage;
                 break;
             case "ada":
-                Settings.model = UtilGPT.ada;
+                Settings.model = GPTRequest.ada;
                 break;
             case "text-davinci-001":
             case "text-davinci-002":
-                Settings.model = UtilGPT.inDavinci;
+                Settings.model = GPTRequest.inDavinci;
                 break;
             case "text-curie-001":
-                Settings.model = UtilGPT.inCurie;
+                Settings.model = GPTRequest.inCurie;
                 break;
             case "text-babbage-001":
-                Settings.model = UtilGPT.inBabbage;
+                Settings.model = GPTRequest.inBabbage;
                 break;
             case "text-ada-001":
-                Settings.model = UtilGPT.inAda;
+                Settings.model = GPTRequest.inAda;
                 break;
             default:
                 validModel = false;

@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import wood.commands.Chat;
 import wood.commands.Prompt;
-import wood.util.Util;
+import wood.util.DiscordUtil;
 
 
 public class MessageHandler extends ListenerAdapter {
@@ -28,7 +28,7 @@ public class MessageHandler extends ListenerAdapter {
 
             // if the bot that sent a message is in a /prompt thread, and it both isn't the first message and isn't ephemeral,
             // add emoji reaction allowing user to delete it (ReactionHandler).
-            if(isInPromptThread && !isEphemeral && !Util.isFirstMessageInThread(event, event.getMessage())) {
+            if(isInPromptThread && !isEphemeral && !DiscordUtil.isFirstMessageInThread(event, event.getMessage())) {
                 event.getMessage().addReaction(Emoji.fromUnicode(ReactionHandler.trashEmoji)).queue();
             }
             return;

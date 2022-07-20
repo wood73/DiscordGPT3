@@ -1,8 +1,7 @@
 package wood.services;
 
 import lombok.extern.slf4j.Slf4j;
-import wood.util.Util;
-import wood.util.UtilGPT;
+import wood.util.GPTRequest;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -29,8 +28,7 @@ public class OpenAIKeyService {
             if((args[i].equalsIgnoreCase("-AIkey") && i+1 == args.length) ||
                     (args[i].equalsIgnoreCase("-AIkey") && i+1 != args.length && args[i+1].startsWith("-"))) {
 
-                Util.runtimeException("error: -AIkey requires an argument. Usage: -AIkey <OpenAI_API_Key>");
-                return null; // unreachable code
+                throw new RuntimeException("error: -AIkey requires an argument. Usage: -AIkey <OpenAI_API_Key>");
             }
             else { // if -AIkey command is found, set the accumulator 'a' = next argument, else don't change 'a'
                 return args[i].equalsIgnoreCase("-AIkey") ? args[i+1] : a;
@@ -39,11 +37,11 @@ public class OpenAIKeyService {
         // if `-AIkey <OpenAI_API_Key>` was passed as a command line argument
         if(argsKey.length() > 0) {
             // if the key is valid, set it and write it to the file
-            if(UtilGPT.setAndTestApiKey(argsKey)) {
+            if(GPTRequest.testAndSetApiKey(argsKey)) {
                 writeKeyFile(argsKey);
             }
             else {
-                Util.runtimeException("Invalid OpenAI API key passed as a command line argument: '" + argsKey
+                throw new RuntimeException("Invalid OpenAI API key passed as a command line argument: '" + argsKey
                         + "'. Usage: -AIkey <OpenAI_API_Key>");
             }
         }
@@ -52,13 +50,13 @@ public class OpenAIKeyService {
 
             if(key.isPresent()) {
                 // if the key is invalid, throw a RuntimeException
-                if(!UtilGPT.setAndTestApiKey(key.get())) {
-                    Util.runtimeException("Invalid OpenAI API key found in file: '" + key.get() + "'. "
+                if(!GPTRequest.testAndSetApiKey(key.get())) {
+                    throw new RuntimeException("Invalid OpenAI API key found in file: '" + key.get() + "'. "
                         + "Usage: -AIkey <OpenAI_API_Key>");
                 }
             }
             else {
-                Util.runtimeException("error: no OpenAI API key found. To set it, use the -AIkey command line argument. "
+                throw new RuntimeException("error: no OpenAI API key found. To set it, use the -AIkey command line argument. "
                     + "Usage: -AIkey <OpenAI_API_Key>");
             }
         }

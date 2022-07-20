@@ -1,7 +1,6 @@
 package wood.services;
 
 import lombok.extern.slf4j.Slf4j;
-import wood.util.Util;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -50,9 +49,8 @@ public class DiscordTokenService {
                 return token.get();
             }
             else {
-                Util.runtimeException("error: no bot token found. To set it, use the -token command line argument. "
+                throw new RuntimeException("error: no bot token found. To set it, use the -token command line argument. "
                         + "Usage: -token <your_token>");
-                return null; // unreachable code
             }
         }
     }

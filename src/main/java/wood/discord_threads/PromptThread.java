@@ -3,7 +3,7 @@ package wood.discord_threads;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.entities.Message;
-import wood.util.Util;
+import wood.util.StringUtil;
 
 //TODO make thread data persistent
 public class PromptThread {
@@ -34,7 +34,7 @@ public class PromptThread {
      */
     public void concatenateToPrompt(String text) {
         // if prompt doesn't end with a space or newline, and text starts with an alphabetic character, add a space between them
-        if(!Util.endsWith(prompt, "[\\s\\n]") && Util.startsWith(text, "[a-zA-Z]"))
+        if(!StringUtil.endsWith(prompt, "[\\s\\n]") && StringUtil.startsWith(text, "[a-zA-Z]"))
             prompt += " " + text;
         else
             prompt += text;

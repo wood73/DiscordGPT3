@@ -4,7 +4,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import wood.commands.Prompt;
-import wood.util.Util;
+import wood.util.DiscordUtil;
 
 public class ReactionHandler extends ListenerAdapter {
 
@@ -21,7 +21,7 @@ public class ReactionHandler extends ListenerAdapter {
         Message msgReactedTo = event.getChannel().retrieveMessageById(event.getMessageId()).complete();
 
         // If the reaction is inside a /prompt thread, is trash emoji, and isn't the first message in the thread, delete the message.
-        if (isInPromptThread && isTrashEmoji && !Util.isFirstMessageInThread(event, msgReactedTo)) {
+        if (isInPromptThread && isTrashEmoji && !DiscordUtil.isFirstMessageInThread(event, msgReactedTo)) {
             event.getChannel().retrieveMessageById(event.getMessageId()).complete().delete().queue();
         }
     }

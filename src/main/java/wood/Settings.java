@@ -1,12 +1,12 @@
 package wood;
 
-import wood.util.UtilGPT;
+import wood.util.GPTRequest;
 
 // TODO use a JSON file to store settings
 public class Settings {
 
     /** The default model to use for all API calls. */
-    public static String model = UtilGPT.inDavinci;
+    public static String model = GPTRequest.inDavinci;
 
     /** The maximum cost USD per API request from threads created by /prompt */
     public static double maxCostPerAPIRequest = .025;

@@ -13,8 +13,9 @@ import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import wood.Settings;
 import wood.discord_threads.PromptThread;
-import wood.util.Util;
-import wood.util.UtilGPT;
+import wood.util.DiscordUtil;
+import wood.util.GPTRequest;
+import wood.util.GPTUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class Prompt extends Commands {
     @Getter private static final Map<Long, PromptThread> threadMap = new HashMap<>();
 
     public static final String MODAL_ID = "prompt-modal";
-    private final static String MODAL_MODEL_ID = "model", MODAL_PROMPT_ID = "prompt";
+    private static final String MODAL_MODEL_ID = "model", MODAL_PROMPT_ID = "prompt";
 
     public Prompt() {
         super.name = "prompt";
@@ -73,8 +74,8 @@ public class Prompt extends Commands {
                 .findFirst().get().getAsString().toLowerCase();
 
         // Verify that the model is valid
-        if(!UtilGPT.isValidModel(model)) {
-            event.reply("'" + model + "' is an Invalid model.\nValid models are: " + Util.listModels())
+        if(!GPTUtil.isValidModel(model)) {
+            event.reply("'" + model + "' is an Invalid model.\nValid models are: " + GPTUtil.listModels())
                     .setEphemeral(true).queue();
             return;
         }
@@ -85,9 +86,9 @@ public class Prompt extends Commands {
 
         // if the prompt is too long, cancel the command
         int promptTokens = prompt.length() / 4 + Settings.promptCompletionTokens;
-        double promptCost = Util.tokensToUSD(promptTokens, model);
+        double promptCost = GPTUtil.tokensToUSD(promptTokens, model);
         if(promptCost > Settings.maxCostPerAPIRequest) {
-            int maxTokens = Util.usdToTokens(Settings.maxCostPerAPIRequest, model) - Settings.promptCompletionTokens;
+            int maxTokens = GPTUtil.usdToTokens(Settings.maxCostPerAPIRequest, model) - Settings.promptCompletionTokens;
             // include the prompt in the ephemeral reply so the data isn't lost
             event.reply(String.format("The prompt is too long - the maximum prompt size for the %s model is %d tokens"
                 + " (roughly %d characters).%n%nGiven prompt:%n```%n%s%n```", model, maxTokens, maxTokens * 4, prompt))
@@ -96,10 +97,11 @@ public class Prompt extends Commands {
         }
 
         // create a name for the thread
-        String threadName = Settings.gptGeneratedThreadNames ? new UtilGPT(Util.convertToInstructModel(Settings.model),
-                "Given the following prompt: \"" + prompt + "\"\nWithout repeating the same words in the prompt,"
-                + "creatively summarize it in a couple words:",
-                7).setFrequencyPenalty(.76).setEchoPrompt(false).request()
+        String threadNamePrompt = "Given the following prompt: \"" + prompt +
+                "\"\nWithout repeating the same words in the prompt, creatively summarize it in a couple words:";
+        String threadName = Settings.gptGeneratedThreadNames ? new GPTRequest.GPTRequestBuilder(
+                GPTUtil.convertToInstructModel(Settings.model), threadNamePrompt, 7, true)
+                .frequencyPenalty(.76).build().request()
                 : Settings.defaultThreadName;
 
         // create a new discord thread
@@ -110,9 +112,9 @@ public class Prompt extends Commands {
 
         threadChannel.sendTyping().deadline(System.currentTimeMillis()).queue();
 
-        String completion = new UtilGPT(model, prompt, Settings.promptCompletionTokens)
-                .setEchoPrompt(false).request(true);
-        completion = Util.addDiscordUnderline(completion);
+        String completion = new GPTRequest.GPTRequestBuilder(model, prompt, Settings.promptCompletionTokens)
+                .build().request(true);
+        completion = DiscordUtil.addDiscordUnderline(completion);
         Message firstMsg = threadChannel.sendMessage(prompt + completion).complete();
 
         // add the thread to the map of threads created by /prompt
@@ -136,9 +138,9 @@ public class Prompt extends Commands {
 
         // if the prompt is too long, don't make the API request
         int tokens = prompt.length() / 4 + Settings.promptCompletionTokens;
-        double promptCost = Util.tokensToUSD(tokens, thread.getModel());
+        double promptCost = GPTUtil.tokensToUSD(tokens, thread.getModel());
         if(promptCost > Settings.maxCostPerAPIRequest) {
-            int maxTokens = Util.usdToTokens(Settings.maxCostPerAPIRequest, thread.getModel()) - Settings.promptCompletionTokens;
+            int maxTokens = GPTUtil.usdToTokens(Settings.maxCostPerAPIRequest, thread.getModel()) - Settings.promptCompletionTokens;
 
             event.getChannel().sendMessage(String.format("The prompt has gotten too long - the maximum prompt size for the %s"
                     + " model is %d tokens (roughly %d characters).  Edit the prompt using the /edit command.",
@@ -148,11 +150,11 @@ public class Prompt extends Commands {
         else { // Make an API request using the prompt, and add the completion to the first message in the thread
             event.getChannel().sendTyping().deadline(System.currentTimeMillis()).queue();
 
-            String completion = new UtilGPT(thread.getModel(), prompt, Settings.promptCompletionTokens)
-                    .setEchoPrompt(false)
-                    .request(true);
+            String completion = new GPTRequest.GPTRequestBuilder(
+                    thread.getModel(), prompt, Settings.promptCompletionTokens,true)
+                    .build().request(true);
 
-            completion = Util.addDiscordUnderline(completion);
+            completion = DiscordUtil.addDiscordUnderline(completion);
             thread.concatenateToPrompt(completion);
             thread.getMessage().editMessage(thread.getPrompt()).queue();
         }
