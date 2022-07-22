@@ -6,7 +6,13 @@ import net.dv8tion.jda.api.entities.ThreadChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import wood.discord_threads.PromptThread;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Modal;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import wood.Settings;
+import wood.discord_threads.ChatThread;
+import wood.util.GPTRequest;
 import wood.util.GPTUtil;
 
 import java.util.HashMap;
@@ -15,7 +21,7 @@ import java.util.Map;
 public class Chat extends Commands {
     /** Map of each thread created by `/chat` to its prompt related data */
     @Getter
-    private static final Map<Long, PromptThread> threadMap = new HashMap<>();
+    private static final Map<Long, ChatThread> threadMap = new HashMap<>();
 
     public static final String MODAL_ID = "chat-modal";
     private static final String MODAL_MODEL_ID = "model", MODAL_NAME_ID = "name",
@@ -35,10 +41,6 @@ public class Chat extends Commands {
     @Override
     public void runCommand(long userId, SlashCommandInteractionEvent event) {
 
-        event.reply("/" + name + " is currently under development.").setEphemeral(true).queue();
-        return;
-        /*
-
         // Verify the command isn't used inside a thread
         if(event.getChannelType().isThread()) {
             event.reply("/" + name + " can't be used inside of a thread.").setEphemeral(true).queue();
@@ -53,7 +55,7 @@ public class Chat extends Commands {
                 .setPlaceholder("AI")
                 .build();
 
-        TextInput chatbotDescription = TextInput.create(MODAL_NAME_ID, "Chatbot Description", TextInputStyle.SHORT)
+        TextInput chatbotDescription = TextInput.create(MODAL_DESCRIPTION_ID, "Chatbot Description", TextInputStyle.PARAGRAPH)
                 .setPlaceholder("An AI assistant who is helpful, creative, and clever.")
                 .build();
 
@@ -63,7 +65,6 @@ public class Chat extends Commands {
 
         event.replyModal(modal).queue();
 
-        */
     }
 
     /**
@@ -91,15 +92,48 @@ public class Chat extends Commands {
                 .filter(v -> v.getId().equals(MODAL_DESCRIPTION_ID))
                 .findFirst().get().getAsString();
 
-        // create a new discord thread for the chatbot
+        // create a new discord thread for the chatbot, and add it to the threadMap of all chatbots.
         ThreadChannel threadChannel = event.getTextChannel().createThreadChannel(chatbotName).complete();
-        threadChannel.sendMessage(chatbotName).queue();
+        ChatThread chatThread = new ChatThread(threadChannel, model, chatbotName, chatbotDescription);
+        threadMap.put(threadChannel.getIdLong(), chatThread);
 
-        //TODO add the thread to the list of threads created by /chat
+        // modal gives an error (in the Discord UI) if no reply is given
+        event.reply("Chat-bot thread created").setEphemeral(true).queue();
+
+        // generate the chatbot's first message
+        String prompt = "Description of " + chatbotName + ": " + chatbotDescription + "\n\n"
+                + "The following is a conversation in a Discord server with " + chatbotName + ". "
+                + chatbotName + " starts with a greeting.\n" + chatThread.getChatbotDisplayName();
+        String completion = new GPTRequest.GPTRequestBuilder(
+                model, prompt, Settings.chatCompletionTokens, true)
+                .build().request(true);
+        completion = completion.replaceFirst("[\\s\\n]*", ""); // remove leading whitespace or newline
+
+        // send and log the first message
+        String message = chatThread.getChatbotDisplayName() + completion;
+        threadChannel.sendMessage(message).queue();
+        chatThread.registerMessage(message, prompt + completion);
     }
 
     public void registerMessage(long threadID, String message, MessageReceivedEvent event) {
+        ChatThread chatThread = threadMap.get(threadID);
 
+        // format the message for how it'll be sent to GPT-3
+        String authorNameFormatted = ChatThread.handleNamePrefix + event.getAuthor().getName() + ChatThread.handleNameSuffix;
+        String messageFormatted = authorNameFormatted + message;
+        chatThread.registerMessage(message, messageFormatted);
+
+        // send the message to GPT-3
+        String prompt = chatThread.getChatHistoryWithinTokenLimit() + chatThread.getChatbotDisplayName();
+        String completion = new GPTRequest.GPTRequestBuilder(
+                chatThread.getModel(), prompt, Settings.chatCompletionTokens, true)
+                .build().request(true);
+        completion = completion.replaceFirst("[\\s\\n]*", ""); // remove leading whitespace or newline
+
+        // send and log the message
+        String response = chatThread.getChatbotDisplayName() + completion;
+        event.getThreadChannel().sendMessage(response).queue();
+        chatThread.registerMessage(response, response);
     }
 
     @Override

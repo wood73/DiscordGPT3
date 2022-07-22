@@ -10,13 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** A wrapper class for com.theokanning.openai.completion.CompletionRequest. Requires GPTRequest.apiKey to be set. */
+/** A wrapper class for com.theokanning.openai. Requires GPTRequest.apiKey to be set. */
 @Slf4j
 public class GPTRequest {
 
     // ----------- static fields -----------
 
-    /** The OpenAI API key to use for all requests. Can set using the setAndTestApiKey method. */
+    /** The OpenAI API key to use for all requests. Can set using the testAndSetApiKey method. */
     public static String apiKey = "";
 
     /** Language models */
@@ -206,7 +206,7 @@ public class GPTRequest {
          *               UtilGPT.inDavinci, UtilGPT.inCurie, UtilGPT.inBabbage, UtilGPT.inAda
          * @param prompt Prompt sent to the language model
          * @param maxTokens Maximum number of tokens use in the API request
-         * @param addPromptTokensToMaxTokens Whether the number of tokens in the prompt should be added to maxTokens (only in this constructor)
+         * @param addPromptTokensToMaxTokens Whether the number of tokens in the prompt should be added to maxTokens
          */
         public GPTRequestBuilder(String model, String prompt, int maxTokens, boolean addPromptTokensToMaxTokens) {
             this.model = model;
@@ -224,10 +224,20 @@ public class GPTRequest {
             return new GPTRequest(this);
         }
 
-        /** @param prompt, Prompt sent to the language model
+        /** @param prompt Prompt sent to the language model
          *  @return This GPTRequestBuilder, for chaining */
         public GPTRequestBuilder prompt(String prompt) {
             this.prompt = prompt;
+            return this;
+        }
+
+        /** @param prompt Prompt sent to the language model
+         *  @param maxTokens Maximum number of tokens use in the API request
+         *  @param addPromptTokensToMaxTokens Whether the number of tokens in the prompt should be added to maxTokens
+         *  @return This GPTRequestBuilder, for chaining */
+        public GPTRequestBuilder promptAndTokens(String prompt, int maxTokens, boolean addPromptTokensToMaxTokens) {
+            this.prompt = prompt;
+            this.maxTokens = addPromptTokensToMaxTokens ? maxTokens + GPTUtil.countTokens(prompt) : maxTokens;
             return this;
         }
 

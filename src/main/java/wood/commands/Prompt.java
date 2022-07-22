@@ -98,7 +98,7 @@ public class Prompt extends Commands {
 
         // create a name for the thread
         String threadNamePrompt = "Given the following prompt: \"" + prompt +
-                "\"\nWithout repeating the same words in the prompt, creatively summarize it in a couple words:";
+                "\"\nA creative, yet very short title for the prompt is:";
         String threadName = Settings.gptGeneratedThreadNames ? new GPTRequest.GPTRequestBuilder(
                 GPTUtil.convertToInstructModel(Settings.model), threadNamePrompt, 7, true)
                 .frequencyPenalty(.76).build().request()
