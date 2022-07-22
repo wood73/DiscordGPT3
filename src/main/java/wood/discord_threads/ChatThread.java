@@ -74,7 +74,7 @@ public class ChatThread {
      *         if the chat history is too long, the oldest messages will have been removed (excluding the first)
      */
     public String getChatHistoryWithinTokenLimit() {
-        return gptFormattedMsgsLimited.stream().reduce("", (a, b) -> a + (a.length() == 0 ? "" : "\n") + b) + "\n";
+        return String.join("\n", gptFormattedMsgsLimited) + "\n";
     }
 
 }
