@@ -68,7 +68,8 @@ public class Chat extends Commands {
     }
 
     /**
-     * Called from ModalHandler when the `chat` modal is submitted.
+     * Called from ModalHandler when the `chat-modal` modal is submitted.
+     * Creates a new thread with the settings specified in the modal, and sends a greeting in the thread
      * @param event
      */
     public void readModal(ModalInteractionEvent event) {
@@ -115,6 +116,13 @@ public class Chat extends Commands {
         chatThread.registerMessage(message, prompt + completion);
     }
 
+    /**
+     * Called when a user sends a message in a thread created by /chat
+     * Has the chat-bot reply to the user.
+     * @param threadID The ID of the thread the message was sent in.
+     * @param message The message that was sent.
+     * @param event
+     */
     public void registerMessage(long threadID, String message, MessageReceivedEvent event) {
         ChatThread chatThread = threadMap.get(threadID);
 
