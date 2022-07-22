@@ -22,15 +22,19 @@ public class ChatThread {
 
     /** Raw string content of the discord messages */
     private final List<String> messages = new ArrayList<>();
+    
     /** Discord messages formatted for GPT-3 to generate better responses */
     private final List<String> gptFormattedMsgs = new ArrayList<>();
+    
     /** A list of gptFormattedMessages that fit within Settings.maxCostPerAPIRequest */
     private final List<String> gptFormattedMsgsLimited = new ArrayList<>();
+    
     /** The number of tokens inside gptFormattedMsgsLimited */
     private int tokensInGPTFormattedMsgsLimited = 0;
 
     /** What precedes and follows names in the chat */
     public final static String handleNamePrefix = "[", handleNameSuffix = "]> ";
+    
     /** The chatbot's name formatted with handleNamePrefix and handleNameSuffix */
     @Getter public final String chatbotDisplayName;
 
