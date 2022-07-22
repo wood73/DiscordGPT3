@@ -15,31 +15,33 @@ public class DiscordTokenService {
 
     /**
      * Loads the bot token - if token is given in command line arguments (-token <token>) then it is saved to
-     * TOKEN_FILE.  If it isn't given as an argument, it'll look for it inside TOKEN_FILE - if this fails, a
-     * RuntimeException is thrown
+     * TOKEN_FILE.  If it isn't given as an argument, it'll look for it inside TOKEN_FILE
      * @param args Command line arguments
      * @return Discord bot token, either extracted from command line arguments, or from the file system at
      *         TokenService.TOKEN_FILE
+     * @throws IllegalArgumentException if -token is passed as a command line argument, but no token is given
+     * @throws Exception if the token doesn't exist from either the command line or the file system
      */
-    public static String load(String[] args) {
+    public static String load(String[] args) throws IllegalArgumentException, Exception {
 
-        //argsToken will be an empty String if `-token <token>` wasn't passed as a command line argument
-        String argsToken = IntStream.range(0, args.length).boxed().reduce("", (a, i) -> {
-            //throw error if -token is last argument, or if the argument after -token is another command
-            if((args[i].equalsIgnoreCase("-token") && i+1 == args.length) ||
-                    (args[i].equalsIgnoreCase("-token") && i+1 != args.length && args[i+1].startsWith("-"))) {
-
-                String runtimeError = "error: -token requires an argument. Usage: -token <your_token>";
-                log.error(runtimeError);
-                throw new RuntimeException(runtimeError);
+        String argsToken = "";
+        boolean foundArgsToken = false;
+        for(int i = 0; i < args.length; i++) {
+            if(args[i].equalsIgnoreCase("-token")) {
+                // if -token both isn't the last argument, and the next argument isn't another command
+                if(i+1 != args.length && !args[i+1].startsWith("-")) {
+                    argsToken = args[i + 1];
+                    foundArgsToken = true;
+                }
+                else {
+                    throw new IllegalArgumentException("error: -token requires an argument. Usage: -token <discord_bot_token>");
+                }
             }
-            else { //if -token command is found, set the accumulator 'a' = next argument, else don't change 'a'
-                return args[i].equalsIgnoreCase("-token") ? args[i+1] : a;
-            }}, (a,i)->""); // combiner used to allow the 2 parameters inside the accumulator (a & i) to be different types
+        }
 
-
-        if(argsToken.length() > 0) {
+        if(foundArgsToken) {
             writeTokenFile(argsToken);
+            log.info("Token saved to '" + new File(TOKEN_FILE).getAbsoluteFile().getAbsolutePath() + "'");
             return argsToken;
         }
         else {
@@ -49,8 +51,8 @@ public class DiscordTokenService {
                 return token.get();
             }
             else {
-                throw new RuntimeException("error: no bot token found. To set it, use the -token command line argument. "
-                        + "Usage: -token <your_token>");
+                throw new Exception("error: no bot token found. To set it, use the -token command line argument."
+                        + " Usage: -token <your_token>");
             }
         }
     }

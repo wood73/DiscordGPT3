@@ -15,48 +15,52 @@ public class OpenAIKeyService {
     public static final String KEY_FILE = "OpenAI_key.txt";
 
     /**
-     * Loads the OpenAI key, and if it is valid, sets UtilGPT.apiKey; if it's invalid, throws a RuntimeException
+     * Loads the OpenAI key, and if it is valid, sets UtilGPT.apiKey
      * If the key is passed as a command line argument (-AIkey <OpenAI_API_Key>) then it is saved to
      * KEY_FILE.  If it isn't given as an argument, it'll look for it inside KEY_FILE
      * @param args Command line arguments
+     * @throws IllegalArgumentException if -AIkey is passed as a command line argument, but no key is given
+     * @throws Exception if the key is invalid, or doesn't exist from either the command line or the file system
      */
-    public static void load(String[] args) {
-
-        // argsKey will be an empty String if `-AIkey <OpenAI_API_Key>` wasn't passed as a command line argument
-        String argsKey = IntStream.range(0, args.length).boxed().reduce("", (a, i) -> {
-            // throw error if -AIkey is last argument, or if the argument after -AIkey is another command
-            if((args[i].equalsIgnoreCase("-AIkey") && i+1 == args.length) ||
-                    (args[i].equalsIgnoreCase("-AIkey") && i+1 != args.length && args[i+1].startsWith("-"))) {
-
-                throw new RuntimeException("error: -AIkey requires an argument. Usage: -AIkey <OpenAI_API_Key>");
+    public static void load(String[] args) throws IllegalArgumentException, Exception {
+        String argsKey = "";
+        boolean foundArgsKey = false;
+        for(int i = 0; i < args.length; i++) {
+            if(args[i].equalsIgnoreCase("-AIkey")) {
+                // if -AIkey both isn't the last argument, and the next argument isn't another command
+                if(i+1 != args.length && !args[i+1].startsWith("-")) {
+                    argsKey = args[i + 1];
+                    foundArgsKey = true;
+                }
+                else {
+                    throw new IllegalArgumentException("error: -AIkey requires an argument. Usage: -AIkey <OpenAI_API_Key>");
+                }
             }
-            else { // if -AIkey command is found, set the accumulator 'a' = next argument, else don't change 'a'
-                return args[i].equalsIgnoreCase("-AIkey") ? args[i+1] : a;
-            }}, (a,i)->""); // combiner used to allow the 2 parameters inside the accumulator (a & i) to be different types
+        }
 
-        // if `-AIkey <OpenAI_API_Key>` was passed as a command line argument
-        if(argsKey.length() > 0) {
+        if(foundArgsKey) {
             // if the key is valid, set it and write it to the file
             if(GPTRequest.testAndSetApiKey(argsKey)) {
                 writeKeyFile(argsKey);
+                log.info("OpenAI API key saved to '" + new File(KEY_FILE).getAbsoluteFile().getAbsolutePath() + "'");
             }
             else {
-                throw new RuntimeException("Invalid OpenAI API key passed as a command line argument: '" + argsKey
+                throw new IllegalArgumentException("error: Invalid OpenAI API key passed as a command line argument: '" + argsKey
                         + "'. Usage: -AIkey <OpenAI_API_Key>");
             }
         }
-        else {
+        else { // look for the key in the file
             Optional<String> key = readKeyFile();
 
             if(key.isPresent()) {
-                // if the key is invalid, throw a RuntimeException
+                // if the key is invalid, throw an exception - if the key is valid, testAndSetApiKey will set it
                 if(!GPTRequest.testAndSetApiKey(key.get())) {
-                    throw new RuntimeException("Invalid OpenAI API key found in file: '" + key.get() + "'. "
+                    throw new Exception("Invalid OpenAI API key found in file: '" + key.get() + "'. "
                         + "Usage: -AIkey <OpenAI_API_Key>");
                 }
             }
-            else {
-                throw new RuntimeException("error: no OpenAI API key found. To set it, use the -AIkey command line argument. "
+            else { // key both not in file, and not passed as a command line argument
+                throw new Exception("error: no OpenAI API key found. To set it, use the -AIkey command line argument. "
                     + "Usage: -AIkey <OpenAI_API_Key>");
             }
         }
